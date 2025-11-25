@@ -67,48 +67,73 @@ Together, these components turn individual reports into a real-time community he
 
 ### 3.1 🩵 EarlySignal Agent — Personal Health Intake and Guidance
 
-At the center of EarlySignal is a conversational agent built on *LangGraph*, a framework for structuring multi-step AI dialogues. The chatbot is powered by *Google’s Gemini 2.0 Flash* LLM model, which enables fast, contextual understanding of user symptoms and conversational health guidance.
+At the center of EarlySignal is a conversational agent built on *LangGraph*, a framework for structuring multi-step AI dialogues. The chatbot is powered by *Google’s Gemini 2.0 Flash* LLM model, which enables fast, contextual understanding of user symptoms and conversational health guidance. Instead of a freeform chat, the system follows a defined sequence of “agent nodes” that ensure every report is standardized, validated, and complete before it enters the analytics pipeline.
 
-When a user opens the app, the chatbot:
+<div align="center">
+  <img src="Misc_Documents/Images/langgraph_flow.png">
+</div>
 
-1. Collects key symptoms and their onset time in natural language.  
-2. Generates a preliminary diagnosis with a confidence estimate.  
-3. Asks follow-up questions about exposure location (where the illness may have been caught) and current location (where the user is now).  
-4. Offers care recommendations and guidance on when to seek medical help.
+The conversation flow contains the following agents:
 
-**NOTE: REPLACE WITH DEMO OF CHAT**
+**Symptoms + Onset Days Collector**
+Extracts primary symptoms, duration, and contextual details from natural language.
 
-Each interaction contributes an anonymized record including symptoms, diagnosis, and geolocation to a secure data store. As more users participate, the system gains “collective wisdom,” i.e., when multiple nearby users report similar patterns, the model refines its diagnostic confidence and improves local accuracy.
+**Diagnosis Clarifier**
+Asks targeted follow-up questions based on symptom patterns to narrow the diagnosis.
 
-We fed the diagnostic agent curated knowledge of the most common infectious diseases that typically cause community outbreaks, in the form of a standardized disease list and their associated symptoms. For rare or non-infectious conditions, the LLM draws on its own internal medical knowledge base to infer likely causes based on context.
+**Exposure Location Collector**
+Interprets where the user believes they were exposed (e.g., “the taco place by the pier”), converting natural-language descriptions into a geocoded exposure point.
 
-**Conversation orchestration** uses *LangGraph* with explicit state and validators:  
-- State sections include user interaction, history, symptoms, diagnosis, exposure tracking, current location, final outputs, and control flags
-- Validators ensure symptoms, locations, and timing inputs are sensible before advancing
+**Current Location Collector**
+Captures the user’s present location (or bypasses this step if in-app GPS is enabled).
 
-**Node sequence**  
-symptom_collection → extract structured symptoms + onset days  
-diagnosis → LLM proposes diagnosis; may ask up to three clarifying questions  
-exposure_collection → extract where and when exposure happened  
-location_collection → collect current city/state then venue or landmark  
-bq_submission → package and write report to *BigQuery*  
-care_advice → return tailored advice and “when to seek professional medical help”
+**Cluster Validation Agent**
+Checks nearby cases to reinforce or correct the preliminary diagnosis.
 
-**Routing rules (conditional edges)**  
-Nodes only proceed when required fields are valid; otherwise, the system pauses and waits for user input.  
-Final edges (bq_submission → care_advice → END) are unconditional.
+**Report Submitter**
+Packages the final structured diagnosis, symptoms, timestamps, and geolocations as a clean JSON object.
 
-**Confidence refinement via “collective wisdom”**  
-This component is inspired by the principles of *ensemble modeling*, where multiple independent inputs are combined to produce a stronger, more reliable prediction.  
-EarlySignal applies this idea by aggregating diagnoses and symptom reports across users within shared spatial and temporal windows. If multiple nearby reports exhibit similar diagnostic outcomes, the system dynamically increases the confidence score for that condition (e.g., from 60% to 80–90%), treating community consensus as a reinforcing signal rather than relying on a single agent output.
+**Care Advice Provider***
+Offers guidance on self-care, red-flag symptoms, and when to seek professional help.
 
-This approach merges personalized AI care with community-level insight, bridging private experience and public health awareness.
+<div align="center"> <video src="https://github.com/user-attachments/assets/1f42f76e-5855-4209-b902-31dfcb11ac8e" width="350" controls></video> </div>
+
+At the end of the conversation, the JSON payload is written into *BigQuery* through a secure *FastAPI* endpoint. This guarantees that each report follows a consistent schema – symptoms, illness category, exposure point, current location, and confidence score  allowing downstream systems (alerts, dashboards, and clustering algorithms) to operate on high-quality, standardized data.
+
+This pipeline allows the chatbot to serve not only as a personal triage assistant but also as a reliable data-collection interface for real-time population health intelligence.
 
 ---
 
 ### 3.1.1 🩵 Cluster Validation Agent — Collective Intelligence Layer
 
-----
+After the chatbot generates a preliminary diagnosis, EarlySignal runs an additional step: the **Cluster Validation Agent**. 
+This mechanism is inspired by ensemble-model techniques, where many independent signals are combined to strengthen a final prediction. Here, the “ensemble” comes from real users reporting similar symptoms in the same space and time.
+
+Instead of relying on a single user’s potentially ambiguous symptom set, the system checks whether similar illnesses are appearing across nearby reports. When multiple users independently show the same pattern within the same spatial-temporal window, that shared signal becomes a stronger basis for diagnosing emerging activity.
+
+**How It Works**
+- The system searches for clusters in the same or bordering census tracts within the past 30 days
+- The system checks if the clusters detected has 4+ reports and a predominant illness
+- The user’s preliminary diagnosis is compared with the cluster’s predominant illness
+- Based on the level of local agreement, the diagnosis is confirmed, adjusted, or left unchanged
+
+**Validation Outcomes**
+
+*Confirmed Diagnosis*
+If the user’s diagnosis matches the predominant illness in a nearby cluster, the system reinforces the diagnosis and boosts confidence (up to ~30%).
+
+*Alternative Diagnosis*
+If the user’s diagnosis differs from a strong cluster consensus (≥60%), EarlySignal suggests the cluster illness with higher confidence (up to ~85%).
+
+*Weak Match*
+Clusters exist, but illnesses are too mixed to infer a pattern. The diagnosis remains unchanged, but nearby illness activity is surfaced.
+
+*No Cluster Match*
+No relevant clusters found. The original diagnosis stands as-is.
+
+By grounding each diagnosis in neighborhood-level patterns, the system becomes more accurate, adaptive, and resilient to ambiguous early symptoms—exactly the type of collective signal needed to spot emerging outbreaks before official data or headlines catch up.
+
+---
 
 ### 3.2 🩵 Alert System — Detecting Emerging Outbreaks
 
@@ -144,7 +169,7 @@ An alert is generated when:
 - More than *60%* of reports within a tract are diagnosed as the same disease, and 
 - At least *three similar reports* are found within a single DBSCAN cluster.  
 
-Alerts appear in the app as soon as user logs in, based on their GPS enabled geo-point that is taken in. They can also be explored on the maps in the dashboard section, making it easy for users to see affected areas and understand the underlying risk—whether that means avoiding a contaminated venue or being aware of active respiratory cases nearby.
+Alerts appear in the app as soon as user logs in, based on their GPS enabled geo-point that is taken in. They can also be explored on the maps in the dashboard section, making it easy for users to see affected areas and understand the underlying risk, whether that means avoiding a contaminated venue or being aware of active respiratory cases nearby.
 
 ---
 
@@ -175,7 +200,7 @@ These dashboards give communities a clear, intuitive way to “see” the health
 
 ### 3.4. 🩵 Architecture Overview
 
-The EarlySignal system integrates the mobile app, authentication layer, LLM chatbot workflow, and alert engine through a coordinated flow across **Flutter**, **Firebase**, **FastAPI**, and **BigQuery**. Below is a high-level overview of how data moves through the platform.***
+The EarlySignal system integrates the mobile app, authentication layer, LLM chatbot workflow, and alert engine through a coordinated flow across **Flutter**, **Firebase**, **FastAPI**, and **BigQuery**. Below is a high-level overview of how data moves through the platform.
 
 <div align="center">
   <img src="Misc_Documents/Images/earlysignal_architecture.png">
