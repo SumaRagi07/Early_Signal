@@ -75,25 +75,25 @@ At the center of EarlySignal is a conversational agent built on *LangGraph*, a f
 
 The conversation flow contains the following agents:
 
-**Symptoms + Onset Days Collector**
+**Symptoms + Onset Days Collector:**
 Extracts primary symptoms, duration, and contextual details from natural language.
 
-**Diagnosis Clarifier**
+**Diagnosis Clarifier:**
 Asks targeted follow-up questions based on symptom patterns to narrow the diagnosis.
 
-**Exposure Location Collector**
+**Exposure Location Collector:**
 Interprets where the user believes they were exposed (e.g., “the taco place by the pier”), converting natural-language descriptions into a geocoded exposure point.
 
-**Current Location Collector**
+**Current Location Collector:**
 Captures the user’s present location (or bypasses this step if in-app GPS is enabled).
 
-**Cluster Validation Agent**
+**Cluster Validation Agent:**
 Checks nearby cases to reinforce or correct the preliminary diagnosis.
 
-**Report Submitter**
+**Report Submitter:**
 Packages the final structured diagnosis, symptoms, timestamps, and geolocations as a clean JSON object.
 
-**Care Advice Provider**
+**Care Advice Provider:**
 Offers guidance on self-care, red-flag symptoms, and when to seek professional help.
 
 <div align="center"> <video src="https://github.com/user-attachments/assets/1f42f76e-5855-4209-b902-31dfcb11ac8e" width="350" controls></video> </div>
@@ -177,17 +177,20 @@ Alerts appear in the app as soon as user logs in, based on their GPS enabled geo
 
 The dashboard gives users a real-time view of illness activity around them. Each component turns raw spatial data and community reports into clear, actionable visuals.
 
-**Illness Breakdown Report**
+**Illness Breakdown Report:**
+
 A pie chart summarizing the distribution of active illness types within a user-defined radius. This view helps users quickly understand what categories of illness are circulating nearby, and filter by distance to adjust the level of local detail.
 
 <div align="center"> <video src="https://github.com/user-attachments/assets/5a46f2dd-b381-4309-a06c-6f1108618e9d" width="350" controls></video> </div>
 
-**Nearby Reports**
+**Nearby Reports:**
+
 A map-based view showing recent reports around the user. This is especially useful for tracking airborne or direct-contact illnesses, where knowing where people currently are matters. Users can zoom in or out to explore different localities, filter by illness category, and view highlighted hotspots where community activity is elevated.
 
 <div align="center"> <video src="https://github.com/user-attachments/assets/de2d76de-f528-4490-9acb-54b9662cd9ad" width="350" controls></video> </div>
 
-**Exposure Sources**
+**Exposure Sources:**
+
 This view maps the origin points of reported illnesses—where users believe they were exposed. It’s particularly valuable for foodborne, waterborne, and insect-borne illnesses, where avoiding a contaminated location is more important than knowing where sick individuals currently are. Reports can be explored across map zoom levels and filtered by illness category.
 
 <div align="center"> <video src="https://github.com/user-attachments/assets/e06df7f0-2896-490c-a4d4-1e77d4daecb1" width="350" controls></video> </div>
