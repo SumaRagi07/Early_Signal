@@ -93,12 +93,12 @@ Checks nearby cases to reinforce or correct the preliminary diagnosis.
 **Report Submitter**
 Packages the final structured diagnosis, symptoms, timestamps, and geolocations as a clean JSON object.
 
-**Care Advice Provider***
+**Care Advice Provider**
 Offers guidance on self-care, red-flag symptoms, and when to seek professional help.
 
 <div align="center"> <video src="https://github.com/user-attachments/assets/1f42f76e-5855-4209-b902-31dfcb11ac8e" width="350" controls></video> </div>
 
-At the end of the conversation, the JSON payload is written into *BigQuery* through a secure *FastAPI* endpoint. This guarantees that each report follows a consistent schema – symptoms, illness category, exposure point, current location, and confidence score  allowing downstream systems (alerts, dashboards, and clustering algorithms) to operate on high-quality, standardized data.
+At the end of the conversation, the JSON payload is written into *BigQuery* through a secure *FastAPI* endpoint. This guarantees that each report follows a consistent schema – symptoms, illness category, exposure point, current location, and confidence score – allowing downstream systems (alerts, dashboards, and clustering algorithms) to operate on high-quality, standardized data.
 
 This pipeline allows the chatbot to serve not only as a personal triage assistant but also as a reliable data-collection interface for real-time population health intelligence.
 
@@ -131,7 +131,7 @@ Clusters exist, but illnesses are too mixed to infer a pattern. The diagnosis re
 *No Cluster Match*
 No relevant clusters found. The original diagnosis stands as-is.
 
-By grounding each diagnosis in neighborhood-level patterns, the system becomes more accurate, adaptive, and resilient to ambiguous early symptoms—exactly the type of collective signal needed to spot emerging outbreaks before official data or headlines catch up.
+By grounding each diagnosis in neighborhood-level patterns, the system becomes more accurate, adaptive, and resilient to ambiguous early symptoms. This is exactly the type of collective signal needed to spot emerging outbreaks before official data or headlines catch up.
 
 ---
 
@@ -206,27 +206,27 @@ The EarlySignal system integrates the mobile app, authentication layer, LLM chat
   <img src="Misc_Documents/Images/earlysignal_architecture.png">
 </div>
 
-*I User Authentication & App Initialization*
+*I. User Authentication & App Initialization*
 
 1. The user opens the EarlySignal mobile app (built in Flutter) and attempts to log in.
 2. The app requests an authentication token from Firebase.
 3. Firebase verifies the token and grants secure access to the rest of the system.
 
-*II Location Collection, BigQuery Storage & Alert Logic*
+*II. Location Collection, BigQuery Storage & Alert Logic*
 
 4. The app collects the user’s current GPS-enabled location geopoint.
 5. This location data is sent securely to Firebase.
 6. Firebase Cloud Functions pass the GPS data to BigQuery to support home page dashboard rendering and alert targeting.
 7. When alerts are available, Firebase Cloud Functions fetch them from BigQuery and return them to the front end.
 
-*III EarlySignal Chatbot Interaction*
+*III. EarlySignal Chatbot Interaction*
 
 8. The user begins a chat session with the diagnostic agent.
 9., 10. The FastAPI backend manages the full LLM workflow, including iterative symptom extraction, clarification questions, exposure information, and final diagnosis generation, along with receiving GPS-enabled location geopoint. 
 11. Once the conversation is complete, the final structured report is submitted to BigQuery through FastAPI.
 
 
-*IV Dashboard Updates*
+*IV. Dashboard Updates*
 
 12. Firebase receives the newly submitted reports from BigQuery.
 13. Dashboard views update on the front end as new reports and clusters become available.
