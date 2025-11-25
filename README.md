@@ -10,11 +10,6 @@
 
 EarlySignal is an AI-powered mobile platform that detects emerging outbreaks by combining frontier-model diagnostic reasoning with geospatial analytics and clustering. The system collects anonymous symptoms, interprets them through a structured LLM agent, and then maps each report in both space and time using census-tract boundaries and temporal windows. By aggregating cases using clustering and comparing individual diagnoses to patterns around them, EarlySignal creates a collective medical intelligence layer that strengthens diagnostic confidence and highlights localized anomalies long before traditional surveillance systems surface them.
 
-## Test
-
-https://raw.githubusercontent.com/masettymahima/Early_Signal/main/Misc_Documents/Videos/dashboard_exposure_sources.mp4
-
-
 ---
 
 ## 🛜 Table of Contents
@@ -117,46 +112,64 @@ This approach merges personalized AI care with community-level insight, bridging
 
 ### 3.2 🩵 Alert System — Detecting Emerging Outbreaks
 
-Every report from the chatbot feeds into a unified analytical pipeline hosted in *BigQuery*. The alert system identifies patterns of illness activity across neighborhoods and within localized clusters, combining both into one cohesive feed.
+Every report from the chatbot feeds into a unified analytical pipeline hosted in *BigQuery*. The alert engine combines neighborhood-level trends and spatial clustering to detect early signs of outbreaks and push targeted alerts to nearby users.
+
+<div align="center"> <video src="https://github.com/user-attachments/assets/3dd18227-34cf-44b4-920a-b492cbd1cb8e" width="350" controls></video> </div>
 
 **1. Every report becomes a data point**  
-When a user submits symptoms through the chatbot, the app logs their approximate location and diagnosis in a secure dataset.
+When a user completes the chatbot flow, the system logs their diagnosis, symptom set, timestamp, and approximate location in a secure dataset.
 
 **2. Neighborhood mapping (Tract-Assigment)**  
-Each report is linked to a census tract — a small geographic area of roughly 1,200–8,000 people that serves as the neighborhood unit.
+Each report is linked to a census tract, a neighborhood-level geographic unit defined by the US Census Bureau. This allows the system to track illness activity at a more granular spatial unit than counties or ZIP codes
 
-**3. Hotspot detection (Cluster-Based Alerts)**  
+**3. Hotspot detection (DBSCAN Cluster-Based Alerts)**  
 The system identifies groups of reports that occur close together in both space and time using a *DBSCAN (Density-Based Spatial Clustering of Applications with Noise)* algorithm. This unsupervised clustering method helps detect areas of concentrated illness activity by grouping reports and creating clusters with a minimum of 3 data points.  
-- For respiratory illnesses, clusters are detected within roughly *500 meters*  
-- For other diseases, clusters can span up to *5 miles( to capture shared exposure sites such as restaurants, events, or pools
+- For respiratory illnesses, clusters are detected within roughly *500 meters*, since transmission risk depends on where sick individuals currently are
+- For other diseases, clusters can span up to *5km to capture shared exposure sites such as restaurants, events, or pools
 
 **4. ⁠⁠Baselines are computed within each cluster**  
 Once clusters are detected, the system evaluates how current case counts compare to historical baselines for that cluster.  
 This step ensures that alerts are not triggered by isolated or routine fluctuations but by genuine anomalies in disease activity.
 
-**5. Localized alerts in the app**  
+**5. Who receives alerts (based on illness category)**
+Alert routing is tailored to the mode of transmission:
+- For Airborne/direct-contact illnesses (e.g., COVID-19, flu):
+Alerts are based on the current location of people infected, since risk depends on proximity to contagious individuals. If multiple respiratory cases are reported near a user, the system sends a localized airborne-risk alert.
+- For foodborne/waterborne/insect-borne illnesses (e.g., Salmonella, norovirus, mosquito-borne diseases):
+Alerts are based on the exposure location, not where sick users are currently located. The important information is whether a restaurant, pool, grocery store, or event is linked to multiple cases.
+
+**6. Triggering localized alerts**  
 When outbreak thresholds are met, alerts are automatically issued to users whose assigned tracts overlap or are adjacent to the affected clusters.  
 An alert is generated when:  
 - More than *60%* of reports within a tract are diagnosed as the same disease, and 
 - At least *three similar reports* are found within a single DBSCAN cluster.  
 
-Users currently located within or near the impacted tract receive a push alert and can view the affected area directly on the in-app map. This design connects individual reports, local neighborhood trends, and cluster detection into a layered early-warning system, ensuring that community alerts are both targeted and timely.
+Alerts appear in the app as soon as user logs in, based on their GPS enabled geo-point that is taken in. They can also be explored on the maps in the dashboard section, making it easy for users to see affected areas and understand the underlying risk—whether that means avoiding a contaminated venue or being aware of active respiratory cases nearby.
 
 ---
 
 ### 3.3 🩵 Dashboards — Seeing the Signal
 
-**NOTE: DEMO OF DASHBOARD SHOWING FUNCTIONALITY TO BE ADDED**
+The dashboard gives users a real-time view of illness activity around them. Each component turns raw spatial data and community reports into clear, actionable visuals.
 
-The app’s dashboard transforms community data into clear, actionable visuals:  
+**Illness Breakdown Report**
+A pie chart summarizing the distribution of active illness types within a user-defined radius. This view helps users quickly understand what categories of illness are circulating nearby, and filter by distance to adjust the level of local detail.
 
-- **Heatmaps** highlight current and historical illness concentrations 
-- **Pie and trend charts** show disease distribution by category
-- **Filters** allow users to explore by radius, exposure type, or timeframe
+<div align="center"> <video src="https://github.com/user-attachments/assets/5a46f2dd-b381-4309-a06c-6f1108618e9d" width="350" controls></video> </div>
+
+**Nearby Reports**
+A map-based view showing recent reports around the user. This is especially useful for tracking airborne or direct-contact illnesses, where knowing where people currently are matters. Users can zoom in or out to explore different localities, filter by illness category, and view highlighted hotspots where community activity is elevated.
+
+<div align="center"> <video src="https://github.com/user-attachments/assets/de2d76de-f528-4490-9acb-54b9662cd9ad" width="350" controls></video> </div>
+
+**Exposure Sources**
+This view maps the origin points of reported illnesses—where users believe they were exposed. It’s particularly valuable for foodborne, waterborne, and insect-borne illnesses, where avoiding a contaminated location is more important than knowing where sick individuals currently are. Reports can be explored across map zoom levels and filtered by illness category.
+
+<div align="center"> <video src="https://github.com/user-attachments/assets/e06df7f0-2896-490c-a4d4-1e77d4daecb1" width="350" controls></video> </div>
 
 Dashboards are generated dynamically from *BigQuery* through *Firebase Cloud Functions* locally in Flutter, ensuring real-time accuracy while keeping user data private and authenticated.
 
-These interfaces translate raw analytics into intuitive public insight — allowing citizens to “see” the health of their surroundings.
+These dashboards give communities a clear, intuitive way to “see” the health signals emerging around them.
 
 ---
 
